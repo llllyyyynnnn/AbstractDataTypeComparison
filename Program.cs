@@ -45,6 +45,14 @@ public class DebugFunctions
         Console.ForegroundColor = backup;
         Console.WriteLine(message);
     }
+
+    public static string GetCallerMethodName()
+    {
+        StackTrace stackTrace = new StackTrace();
+        StackFrame callerFrame = stackTrace.GetFrame(2); // get the laster caller aside from the function that sent us here
+        
+        return callerFrame.GetMethod().Name;
+    }
 }
 
 public class Timers
@@ -72,11 +80,8 @@ public class Timers
         {
             _stopwatch.Stop();
 
-            StackTrace stackTrace = new StackTrace();
-            StackFrame callerFrame = stackTrace.GetFrame(1); // Get the direct caller (frame 1)
-            
             if (returnElapsedTime)
-                DebugFunctions.Log($"{callerFrame.GetMethod().Name} took {GetElapsedMilliseconds()} ms to execute (stopwatch)");
+                DebugFunctions.Log($"{DebugFunctions.GetCallerMethodName()} took {GetElapsedMilliseconds()} ms to execute (stopwatch)");
         }
             
         public long GetElapsedMilliseconds() => _stopwatch.ElapsedMilliseconds;
