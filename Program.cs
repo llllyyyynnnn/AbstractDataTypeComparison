@@ -49,7 +49,7 @@ public class DebugFunctions
     public static string GetCallerMethodName()
     {
         StackTrace stackTrace = new StackTrace();
-        StackFrame callerFrame = stackTrace.GetFrame(2); // get the laster caller aside from the function that sent us here
+        StackFrame callerFrame = stackTrace.GetFrame(2); // get the second last caller aside from the function that sent us here
         
         return callerFrame.GetMethod().Name;
     }
