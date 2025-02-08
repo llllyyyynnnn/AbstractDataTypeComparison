@@ -51,33 +51,36 @@ public class Timers
 {
     public class Stopwatch
     {
-        private System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+        private System.Diagnostics.Stopwatch _stopwatch = new System.Diagnostics.Stopwatch();
 
         public void Start(bool resetStopwatch = true)
         {
-            if (stopwatch.IsRunning)
+            if (_stopwatch.IsRunning)
             {
-                stopwatch.Stop();
-                stopwatch.Reset();
+                _stopwatch.Stop();
+                _stopwatch.Reset();
                 DebugFunctions.Log("The stopwatch was already running and got reset, this could be the result of an interrupted function.", DebugFunctions.EDebugType.warning);
             }
                 
             if (resetStopwatch)
-                stopwatch.Reset();
+                _stopwatch.Reset();
 
-            stopwatch.Start();
+            _stopwatch.Start();
         }
 
         public void Stop(bool returnElapsedTime = false)
         {
-            stopwatch.Stop();
+            _stopwatch.Stop();
 
+            StackTrace stackTrace = new StackTrace();
+            StackFrame callerFrame = stackTrace.GetFrame(1); // Get the direct caller (frame 1)
+            
             if (returnElapsedTime)
-                DebugFunctions.Log($"Stopwatch time elapsed: {GetElapsedMilliseconds()} ms");
+                DebugFunctions.Log($"{callerFrame.GetMethod().Name} took {GetElapsedMilliseconds()} ms to execute (stopwatch)");
         }
             
-        public long GetElapsedMilliseconds() => stopwatch.ElapsedMilliseconds;
-        public TimeSpan GetElapsed() => stopwatch.Elapsed;
+        public long GetElapsedMilliseconds() => _stopwatch.ElapsedMilliseconds;
+        public TimeSpan GetElapsed() => _stopwatch.Elapsed;
     }
 
     public class CPU
@@ -91,6 +94,7 @@ public class Application
     private string SampleText = string.Empty;
     private string[] SampleTextWords;
     private int SampleTextWordCount = 0;
+    private int wordIncrement = 10000;
     Timers.Stopwatch _stopwatch = new Timers.Stopwatch();
     string[] GetWords(string Text) => Text.Split(' ');
     
@@ -126,11 +130,38 @@ public class Application
             AssignFileContentsToString(ref str);
     }
     
+    static IEnumerable<KeyValuePair<string, int>> ListCounter(string[] words, int wordLimit)
+    {
+        List<KeyValuePair<string, int>> kvPairs = new List<KeyValuePair<string, int>>();
+
+        for (int i = 0; i < words.Length; i++)
+        {
+            string word = words[i];
+            
+            kvPairs.Add(new KeyValuePair<string, int>(word, 1));
+        }
+
+        return kvPairs;
+    }
+    
     public void Execute()
     {
         AssignFileContentsToString(ref SampleText);
         SampleTextWords = GetWords(SampleText);
         SampleTextWordCount = SampleTextWords.Length;
+
+        DebugFunctions.Log($"The word count of the provided sample is {SampleTextWordCount}.");
+        int wordsToCheck = 0;
+        while (wordsToCheck > SampleTextWordCount)
+        {
+            wordsToCheck += wordIncrement;
+            
+            if (wordsToCheck > SampleTextWordCount)
+                wordsToCheck = SampleTextWordCount;
+            
+            //ListCounter(SampleTextWords, wordsToCheck);
+            Console.WriteLine(wordsToCheck);
+        }
     }
 }
 
