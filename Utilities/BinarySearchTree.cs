@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace ADTEfficiencyMeasurements.Utilities;
+namespace AbstractDataTypeComparison.Utilities;
 
 public class BinarySearchTree<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : IComparable<TKey>
 {

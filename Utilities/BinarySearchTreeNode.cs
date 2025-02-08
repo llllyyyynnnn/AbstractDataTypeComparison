@@ -1,4 +1,4 @@
-﻿namespace ADTEfficiencyMeasurements.Utilities;
+﻿namespace AbstractDataTypeComparison.Utilities;
 
 public class BinarySearchTreeNode<TKey, TValue> where TKey : IComparable<TKey>
 {

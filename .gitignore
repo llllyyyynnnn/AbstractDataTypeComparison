@@ -398,3 +398,6 @@ FodyWeavers.xsd
 *.sln.iml
 .idea/.idea.ConsoleApp1/.idea/encodings.xml
 .idea/.idea.ConsoleApp1/.idea/indexLayout.xml
+.idea/.idea.AbstractDataTypeComparison/.idea/vcs.xml
+.idea/.idea.AbstractDataTypeComparison/.idea/indexLayout.xml
+.idea/.idea.AbstractDataTypeComparison/.idea/encodings.xml

@@ -5,8 +5,8 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AssemblyName>ADTEfficiencyMeasurements</AssemblyName>
-        <RootNamespace>ADTEfficiencyMeasurements</RootNamespace>
+        <AssemblyName>AbstractDataTypeComparison</AssemblyName>
+        <RootNamespace>AbstractDataTypeComparison</RootNamespace>
     </PropertyGroup>
 
 </Project>

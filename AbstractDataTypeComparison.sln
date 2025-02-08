@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1.csproj", "{AC27C13A-80AD-41EC-97A9-6B0F1BBCFF3B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AbstractDataTypeComparison", "AbstractDataTypeComparison.csproj", "{AC27C13A-80AD-41EC-97A9-6B0F1BBCFF3B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

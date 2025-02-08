@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace ADTEfficiencyMeasurements.Utilities;
+namespace AbstractDataTypeComparison.Utilities;
 
 public class ProcessUserTime
 {
