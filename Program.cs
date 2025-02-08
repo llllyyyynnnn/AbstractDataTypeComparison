@@ -16,7 +16,7 @@ public class DebugFunctions
         information,
         warning
     }
-    
+
     public static void Log(string message, EDebugType debugType = EDebugType.information)
     {
         ConsoleColor backup = Console.ForegroundColor;
@@ -39,9 +39,8 @@ public class DebugFunctions
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.Write("(warning) ");
                 break;
-
         }
-        
+
         Console.ForegroundColor = backup;
         Console.WriteLine(message);
     }
@@ -49,8 +48,10 @@ public class DebugFunctions
     public static string GetCallerMethodName()
     {
         StackTrace stackTrace = new StackTrace();
-        StackFrame callerFrame = stackTrace.GetFrame(2); // get the second last caller aside from the function that sent us here
-        
+        StackFrame
+            callerFrame =
+                stackTrace.GetFrame(2); // get the second last caller aside from the function that sent us here
+
         return callerFrame.GetMethod().Name;
     }
 }
@@ -67,9 +68,11 @@ public class Timers
             {
                 _stopwatch.Stop();
                 _stopwatch.Reset();
-                DebugFunctions.Log("The stopwatch was already running and got reset, this could be the result of an interrupted function.", DebugFunctions.EDebugType.warning);
+                DebugFunctions.Log(
+                    "The stopwatch was already running and got reset, this could be the result of an interrupted function.",
+                    DebugFunctions.EDebugType.warning);
             }
-                
+
             if (resetStopwatch)
                 _stopwatch.Reset();
 
@@ -81,16 +84,16 @@ public class Timers
             _stopwatch.Stop();
 
             if (returnElapsedTime)
-                DebugFunctions.Log($"{DebugFunctions.GetCallerMethodName()} took {GetElapsedMilliseconds()} ms to execute (stopwatch)");
+                DebugFunctions.Log(
+                    $"{DebugFunctions.GetCallerMethodName()} took {GetElapsedMilliseconds()} ms to execute (stopwatch)");
         }
-            
+
         public long GetElapsedMilliseconds() => _stopwatch.ElapsedMilliseconds;
         public TimeSpan GetElapsed() => _stopwatch.Elapsed;
     }
 
     public class CPU
     {
-            
     }
 }
 
@@ -101,8 +104,8 @@ public class Application
     private int SampleTextWordCount = 0;
     private int wordIncrement = 10000;
     Timers.Stopwatch _stopwatch = new Timers.Stopwatch();
-    string[] GetWords(string Text) => Text.Split(' ');
-    
+    string[] GetWords(string text) => text.Split(' ');
+
     private void AssignFileContentsToString(ref string str)
     {
         Console.WriteLine("Please enter the path to the file you want to read from.");
@@ -110,7 +113,7 @@ public class Application
         DebugFunctions.Log("Reading file", DebugFunctions.EDebugType.information);
 
         bool completed = false;
-        
+
         if (File.Exists(path) && path.EndsWith(".txt"))
         {
             try
@@ -130,54 +133,63 @@ public class Application
         {
             DebugFunctions.Log("Invalid file.", DebugFunctions.EDebugType.error);
         }
-        
-        if(!completed)
+
+        if (!completed)
             AssignFileContentsToString(ref str);
     }
-    
-    static IEnumerable<KeyValuePair<string, int>> ListCounter(string[] words, int wordLimit)
+
+    IEnumerable<KeyValuePair<string, int>> ListCounter(string[] words, int wordLimit)
     {
+        _stopwatch.Start();
         List<KeyValuePair<string, int>> kvPairs = new List<KeyValuePair<string, int>>();
 
-        for (int i = 0; i < words.Length; i++)
+        for (int i = 0; i < wordLimit; i++)
         {
             string word = words[i];
-            
-            kvPairs.Add(new KeyValuePair<string, int>(word, 1));
+
+            // Find index of the existing word
+            int index = kvPairs.FindIndex(kv => kv.Key == word);
+
+            if (index != -1)
+            {
+                // If found, update the count
+                kvPairs[index] = new KeyValuePair<string, int>(word, kvPairs[index].Value + 1);
+            }
+            else
+            {
+                // If not found, add new entry
+                kvPairs.Add(new KeyValuePair<string, int>(word, 1));
+            }
         }
 
+        var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).FirstOrDefault();
+        DebugFunctions.Log($"Most frequent word: {mostFrequent}");
+        _stopwatch.Stop(true);
         return kvPairs;
     }
-    
+
+
     public void Execute()
     {
         AssignFileContentsToString(ref SampleText);
         SampleTextWords = GetWords(SampleText);
         SampleTextWordCount = SampleTextWords.Length;
-
         DebugFunctions.Log($"The word count of the provided sample is {SampleTextWordCount}.");
+
         int wordsToCheck = 0;
-        while (wordsToCheck > SampleTextWordCount)
+        int increments = 0;
+        while (SampleTextWordCount > wordsToCheck)
         {
+            increments++;
             wordsToCheck += wordIncrement;
-            
+
             if (wordsToCheck > SampleTextWordCount)
                 wordsToCheck = SampleTextWordCount;
-            
-            //ListCounter(SampleTextWords, wordsToCheck);
+
+            ListCounter(SampleTextWords, wordsToCheck);
             Console.WriteLine(wordsToCheck);
         }
+
+        Console.WriteLine($"Executed {increments} times.");
     }
 }
-
-/*
-    static IEnumerable<KeyValuePair<string, int>> ListCounter(string[] words, ref List<KeyValuePair<string, int>> kvPairs)
-    {
-        foreach (string word in words)
-        {
-            
-        }
-
-        return kvPairs;
-    }
-*/
