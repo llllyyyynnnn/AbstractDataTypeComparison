@@ -7,6 +7,31 @@ using System.Runtime.CompilerServices;
 Application app = new Application();
 app.Execute();
 
+public class CsvFile
+{
+    public string FileName = string.Empty;
+
+    public void Initialize()
+    {
+    }
+
+    public void CreateFile(string path)
+    {
+    }
+
+    public void AppendToFile(string content)
+    {
+    }
+
+    public void ReadFile(string path)
+    {
+    }
+
+    public void OutputContents()
+    {
+    }
+}
+
 public class DebugFunctions
 {
     public enum EDebugType
@@ -138,26 +163,29 @@ public class Application
             AssignFileContentsToString(ref str);
     }
 
-    IEnumerable<KeyValuePair<string, int>> ListCounter(string[] words, int wordLimit)
+    IEnumerable<KeyValuePair<string, int>> ListCounter(string[] words, int wordLimit = 0)
     {
         _stopwatch.Start();
         List<KeyValuePair<string, int>> kvPairs = new List<KeyValuePair<string, int>>();
 
+        if(wordLimit == 0)
+            wordLimit = words.Length;
+        
         for (int i = 0; i < wordLimit; i++)
         {
             string word = words[i];
-
-            // Find index of the existing word
-            int index = kvPairs.FindIndex(kv => kv.Key == word);
+            int index = kvPairs.FindIndex(kv =>
+                kv.Key == word); // will result -1 if the word does not exist, in that case we just add it as kvp(word, 1)
 
             if (index != -1)
             {
-                // If found, update the count
-                kvPairs[index] = new KeyValuePair<string, int>(word, kvPairs[index].Value + 1);
+                kvPairs[index] =
+                    new KeyValuePair<string, int>(word,
+                        kvPairs[index].Value +
+                        1); // already exists, so we update it by getting the last int value and going +1
             }
             else
             {
-                // If not found, add new entry
                 kvPairs.Add(new KeyValuePair<string, int>(word, 1));
             }
         }
@@ -186,8 +214,8 @@ public class Application
             if (wordsToCheck > SampleTextWordCount)
                 wordsToCheck = SampleTextWordCount;
 
+            DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{SampleTextWordCount} words --");
             ListCounter(SampleTextWords, wordsToCheck);
-            Console.WriteLine(wordsToCheck);
         }
 
         Console.WriteLine($"Executed {increments} times.");
