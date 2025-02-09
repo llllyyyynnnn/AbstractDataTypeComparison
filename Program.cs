@@ -3,32 +3,145 @@
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
 
 Application app = new Application();
 app.Execute();
 
 public class CsvFile
 {
-    public string FileName = string.Empty;
-
-    public void Initialize()
+    private struct ContentEntry
     {
+        public string content;
+        public int index;
     }
+    
+    public string Path = string.Empty;
+    private string _content = string.Empty;
+    //private Dictionary<string, int> _template = new Dictionary<string, int>();
+    private List<ContentEntry> _entries = new List<ContentEntry>();
+    private int _templateCount;
 
-    public void CreateFile(string path)
+    
+    public void Initialize(bool defineTemplate = true)
     {
+        if(!File.Exists(Path))
+            try
+            {
+                File.Create(Path).Close();
+            }
+            catch(Exception ex)
+            {
+                DebugFunctions.Log($"Could not write to {Path}. ({ex.Message})", DebugFunctions.EDebugType.Error);
+            }
+
+        if (defineTemplate)
+        {
+            bool inputCancelled = false;
+            List<string> csvTemplate = new List<string>();
+            
+            while (!inputCancelled)
+            {
+                DebugFunctions.Log("Please enter the next field name for the csv template. Enter nothing to cancel.", DebugFunctions.EDebugType.Input);
+                string input = Console.ReadLine();
+                
+                if(input.Contains(";") || input.Length == 0 || input == null)
+                    DebugFunctions.Log("Invalid string.", DebugFunctions.EDebugType.Error);
+                else
+                    csvTemplate.Add(input);
+                
+                DebugFunctions.Log("Do you want to continue? (y/n)", DebugFunctions.EDebugType.Input);
+                inputCancelled = Console.ReadLine()[0] == 'n';
+            }
+
+            string templateContent = string.Empty;
+            for (int i = 0; i < csvTemplate.Count; i++)
+            {
+                string fieldName = csvTemplate[i];
+                templateContent += fieldName;
+
+                if (i < csvTemplate.Count - 1)
+                    templateContent += ";";
+            }
+            
+            File.WriteAllText(Path, templateContent);
+            DebugFunctions.Log("Template has been created.", DebugFunctions.EDebugType.Success);
+        }
     }
-
-    public void AppendToFile(string content)
+    
+    public void Read()
     {
+        if (File.Exists(Path))
+        {
+            try
+            {
+                _content = File.ReadAllText(Path);
+                if (_content == null || _content.Length == 0)
+                    throw new ArgumentException(nameof(_content), "Could not read from file.");
+                
+                if(_entries.Count > 0)
+                    _entries.Clear();
+                
+                string[] lines = _content.Split(Environment.NewLine);
+                for (int y = 0; y < lines.Length; y++) // y = entries, x = fields
+                {
+                    string[] fields = lines[y].Split(';');
+                    
+                    if(y == 0)
+                        _templateCount = fields.Length;
+
+                    for (int x = 0; x < fields.Length; x++)
+                    {
+                        string field = fields[x];
+                    
+                        ContentEntry entry = new ContentEntry();
+                        entry.content = field;
+                        entry.index = x;
+                        
+                        _entries.Add(entry);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugFunctions.Log(ex.Message, DebugFunctions.EDebugType.Error);
+            }
+        }
+        else
+            DebugFunctions.Log($"{Path} does not exist.", DebugFunctions.EDebugType.Error);
     }
-
-    public void ReadFile(string path)
+    
+    public void Append(string content = "")
     {
+        
     }
-
-    public void OutputContents()
+    
+    public void OutputContents(bool clear = false)
     {
+        if(clear)
+            Console.Clear();
+
+        List<string> lines = new List<string>();
+        
+        for (int i = 0; i < _templateCount; i++)
+        {
+            
+        }
+        
+        Console.WriteLine(GetLargestEntry(_entries, 2));
+    }
+    
+    private string GetLargestEntry(List<ContentEntry> entries, int index)
+    {
+        string largestString = string.Empty;
+        
+        foreach (var entry in _entries.Where(e => e.index == index))
+        {
+            if(entry.field.Length > largestString.Length)
+                largestString = entry.field;
+        }
+
+        return largestString;
     }
 }
 
@@ -36,33 +149,48 @@ public class DebugFunctions
 {
     public enum EDebugType
     {
-        success,
-        error,
-        information,
-        warning
+        Success,
+        Error,
+        Information,
+        Warning,
+        Stopwatch,
+        CPUTime,
+        Input
     }
 
-    public static void Log(string message, EDebugType debugType = EDebugType.information)
+    public static void Log(string message, EDebugType debugType = EDebugType.Information)
     {
         ConsoleColor backup = Console.ForegroundColor;
 
         switch (debugType)
         {
-            case EDebugType.error:
+            case EDebugType.Error:
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("(error) ");
                 break;
-            case EDebugType.success:
+            case EDebugType.Success:
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write("(success) ");
                 break;
-            case EDebugType.information:
+            case EDebugType.Information:
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.Write("(information) ");
                 break;
-            case EDebugType.warning:
+            case EDebugType.Warning:
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.Write("(warning) ");
+                break;
+            case EDebugType.Stopwatch:
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write("(stopwatch) ");
+                break;
+            case EDebugType.CPUTime:
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.Write("(cpu) ");
+                break;
+            case EDebugType.Input:
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.Write("(input) ");
                 break;
         }
 
@@ -94,8 +222,8 @@ public class Timers
                 _stopwatch.Stop();
                 _stopwatch.Reset();
                 DebugFunctions.Log(
-                    "The stopwatch was already running and got reset, this could be the result of an interrupted function.",
-                    DebugFunctions.EDebugType.warning);
+                    "Already running and got reset, this could be the result of an interrupted function.",
+                    DebugFunctions.EDebugType.Stopwatch);
             }
 
             if (resetStopwatch)
@@ -110,7 +238,8 @@ public class Timers
 
             if (returnElapsedTime)
                 DebugFunctions.Log(
-                    $"{DebugFunctions.GetCallerMethodName()} took {GetElapsedMilliseconds()} ms to execute (stopwatch)");
+                    $"{DebugFunctions.GetCallerMethodName()} took {GetElapsedMilliseconds()} ms to execute", 
+                    DebugFunctions.EDebugType.Stopwatch);
         }
 
         public long GetElapsedMilliseconds() => _stopwatch.ElapsedMilliseconds;
@@ -135,7 +264,7 @@ public class Application
     {
         Console.WriteLine("Please enter the path to the file you want to read from.");
         string path = Console.ReadLine();
-        DebugFunctions.Log("Reading file", DebugFunctions.EDebugType.information);
+        DebugFunctions.Log("Reading file", DebugFunctions.EDebugType.Information);
 
         bool completed = false;
 
@@ -145,18 +274,18 @@ public class Application
             {
                 _stopwatch.Start();
                 str = File.ReadAllText(path);
-                DebugFunctions.Log("Assigned text!", DebugFunctions.EDebugType.success);
+                DebugFunctions.Log("Assigned text!", DebugFunctions.EDebugType.Success);
                 _stopwatch.Stop(true);
                 completed = true;
             }
             catch (Exception ex)
             {
-                DebugFunctions.Log($"Could not read file. ({ex.Message})", DebugFunctions.EDebugType.error);
+                DebugFunctions.Log($"Could not read file. ({ex.Message})", DebugFunctions.EDebugType.Error);
             }
         }
         else
         {
-            DebugFunctions.Log("Invalid file.", DebugFunctions.EDebugType.error);
+            DebugFunctions.Log("Invalid file.", DebugFunctions.EDebugType.Error);
         }
 
         if (!completed)
@@ -168,9 +297,9 @@ public class Application
         _stopwatch.Start();
         List<KeyValuePair<string, int>> kvPairs = new List<KeyValuePair<string, int>>();
 
-        if(wordLimit == 0)
+        if (wordLimit == 0)
             wordLimit = words.Length;
-        
+
         for (int i = 0; i < wordLimit; i++)
         {
             string word = words[i];
@@ -196,8 +325,16 @@ public class Application
         return kvPairs;
     }
 
-
     public void Execute()
+    {
+        CsvFile file = new CsvFile();
+        file.Path = "C:\\Users\\e\\Downloads\\labb1\\Texts\\CSVFile.csv";
+        //file.Initialize();
+        file.Read();
+        file.OutputContents();
+    }
+
+    public void Execute2()
     {
         AssignFileContentsToString(ref SampleText);
         SampleTextWords = GetWords(SampleText);
@@ -219,5 +356,7 @@ public class Application
         }
 
         Console.WriteLine($"Executed {increments} times.");
+        
+
     }
 }
