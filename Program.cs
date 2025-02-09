@@ -121,14 +121,33 @@ public class CsvFile
         if(clear)
             Console.Clear();
 
-        List<string> lines = new List<string>();
+        List<string> largestEntries = new List<string>();
         
         for (int i = 0; i < _templateCount; i++)
+            largestEntries.Add(GetLargestEntry(_entries, i));
+
+        int leftPos = 0;
+        for (int i = 0; i < _entries.Count; i++)
         {
+            int topPosition = Console.GetCursorPosition().Top;
+            string content = _entries[i].content;
             
+            Console.SetCursorPosition(leftPos, topPosition);
+            Console.Write(content);
+            leftPos += largestEntries[i].Length;
+
+            if (i < _templateCount - 1)
+            {
+                string separator = " | ";
+                Console.Write(separator);
+                leftPos += separator.Length;
+            }
+            else
+            {
+                Console.WriteLine("");
+                leftPos = 0;
+            }
         }
-        
-        Console.WriteLine(GetLargestEntry(_entries, 2));
     }
     
     private string GetLargestEntry(List<ContentEntry> entries, int index)
@@ -137,8 +156,8 @@ public class CsvFile
         
         foreach (var entry in _entries.Where(e => e.index == index))
         {
-            if(entry.field.Length > largestString.Length)
-                largestString = entry.field;
+            if(entry.content.Length > largestString.Length)
+                largestString = entry.content;
         }
 
         return largestString;
