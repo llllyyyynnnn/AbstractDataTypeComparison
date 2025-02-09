@@ -342,7 +342,7 @@ public class Application
                 _stopwatch.Start();
                 str = File.ReadAllText(path);
                 DebugFunctions.Log("Assigned text!", DebugFunctions.EDebugType.Success);
-                _stopwatch.Stop(true);
+                _stopwatch.Stop();
                 completed = true;
             }
             catch (Exception ex)
@@ -387,11 +387,15 @@ public class Application
             }
         }
 
-        var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).FirstOrDefault();
-        DebugFunctions.Log($"Most frequent word: {mostFrequent}");
+        var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).First();
         _stopwatch.Stop(true);
         _cpuTime.Stop();
 
+        return CreateAndAssignTestResults("List", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());;
+    }
+
+    public TestResults CreateAndAssignTestResults(string dataType, KeyValuePair<string, int> mostFrequent, int uniqueWords, int wordLimit, double stopwatchElapsedMilliseconds, double cpuElapsedMilliseconds)
+    {
         TestResults results = new TestResults();
         results.DataType = "List";
         results.MostFrequent = mostFrequent;
@@ -399,7 +403,7 @@ public class Application
         results.WordLimit = wordLimit;
         results.StopwatchElapsedMilliseconds = _stopwatch.GetElapsedMilliseconds();
         results.CpuElapsedMilliseconds = _cpuTime.GetElapsedMilliseconds();
-
+        
         return results;
     }
 
