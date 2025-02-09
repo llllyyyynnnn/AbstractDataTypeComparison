@@ -15,22 +15,24 @@ public class CsvFile
         public string content;
         public int index;
     }
-    
+
     public string Path = string.Empty;
+
     private string _content = string.Empty;
+
     //private Dictionary<string, int> _template = new Dictionary<string, int>();
     private List<ContentEntry> _entries = new List<ContentEntry>();
     private int _templateCount;
 
-    
+
     public void Initialize(bool defineTemplate = true)
     {
-        if(!File.Exists(Path))
+        if (!File.Exists(Path))
             try
             {
                 File.Create(Path).Close();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 DebugFunctions.Log($"Could not write to {Path}. ({ex.Message})", DebugFunctions.EDebugType.Error);
             }
@@ -39,17 +41,18 @@ public class CsvFile
         {
             bool inputCancelled = false;
             List<string> csvTemplate = new List<string>();
-            
+
             while (!inputCancelled)
             {
-                DebugFunctions.Log("Please enter the next field name for the csv template. Enter nothing to cancel.", DebugFunctions.EDebugType.Input);
+                DebugFunctions.Log("Please enter the next field name for the csv template. Enter nothing to cancel.",
+                    DebugFunctions.EDebugType.Input);
                 string input = Console.ReadLine();
-                
-                if(input.Contains(";") || input.Length == 0 || input == null)
+
+                if (input.Contains(";") || input.Length == 0 || input == null)
                     DebugFunctions.Log("Invalid string.", DebugFunctions.EDebugType.Error);
                 else
                     csvTemplate.Add(input);
-                
+
                 DebugFunctions.Log("Do you want to continue? (y/n)", DebugFunctions.EDebugType.Input);
                 inputCancelled = Console.ReadLine()[0] == 'n';
             }
@@ -63,12 +66,12 @@ public class CsvFile
                 if (i < csvTemplate.Count - 1)
                     templateContent += ";";
             }
-            
+
             File.WriteAllText(Path, templateContent);
             DebugFunctions.Log("Template has been created.", DebugFunctions.EDebugType.Success);
         }
     }
-    
+
     public void Read()
     {
         if (File.Exists(Path))
@@ -78,26 +81,26 @@ public class CsvFile
                 _content = File.ReadAllText(Path);
                 if (_content == null || _content.Length == 0)
                     throw new ArgumentException(nameof(_content), "Could not read from file.");
-                
-                if(_entries.Count > 0)
+
+                if (_entries.Count > 0)
                     _entries.Clear();
-                
+
                 string[] lines = _content.Split(Environment.NewLine);
                 for (int y = 0; y < lines.Length; y++) // y = entries, x = fields
                 {
                     string[] fields = lines[y].Split(';');
-                    
-                    if(y == 0)
+
+                    if (y == 0)
                         _templateCount = fields.Length;
 
                     for (int x = 0; x < fields.Length; x++)
                     {
                         string field = fields[x];
-                    
+
                         ContentEntry entry = new ContentEntry();
                         entry.content = field;
                         entry.index = x;
-                        
+
                         _entries.Add(entry);
                     }
                 }
@@ -110,19 +113,18 @@ public class CsvFile
         else
             DebugFunctions.Log($"{Path} does not exist.", DebugFunctions.EDebugType.Error);
     }
-    
+
     public void Append(string content = "")
     {
-        
     }
-    
+
     public void OutputContents(bool clear = false)
     {
-        if(clear)
+        if (clear)
             Console.Clear();
 
         List<string> largestEntries = new List<string>();
-        
+
         for (int i = 0; i < _templateCount; i++)
             largestEntries.Add(GetLargestEntry(_entries, i));
 
@@ -130,13 +132,13 @@ public class CsvFile
         for (int i = 0; i < _entries.Count; i++)
         {
             int topPosition = Console.GetCursorPosition().Top;
-            string content = _entries[i].content;
-            
-            Console.SetCursorPosition(leftPos, topPosition);
-            Console.Write(content);
-            leftPos += largestEntries[i].Length;
+            ContentEntry entry = _entries[i];
 
-            if (i < _templateCount - 1)
+            Console.Write(entry.content);
+            leftPos += largestEntries[entry.index].Length;
+            Console.SetCursorPosition(leftPos, topPosition);
+
+            if (entry.index < _templateCount - 1)
             {
                 string separator = " | ";
                 Console.Write(separator);
@@ -149,14 +151,14 @@ public class CsvFile
             }
         }
     }
-    
+
     private string GetLargestEntry(List<ContentEntry> entries, int index)
     {
         string largestString = string.Empty;
-        
+
         foreach (var entry in _entries.Where(e => e.index == index))
         {
-            if(entry.content.Length > largestString.Length)
+            if (entry.content.Length > largestString.Length)
                 largestString = entry.content;
         }
 
@@ -257,7 +259,7 @@ public class Timers
 
             if (returnElapsedTime)
                 DebugFunctions.Log(
-                    $"{DebugFunctions.GetCallerMethodName()} took {GetElapsedMilliseconds()} ms to execute", 
+                    $"{DebugFunctions.GetCallerMethodName()} took {GetElapsedMilliseconds()} ms to execute",
                     DebugFunctions.EDebugType.Stopwatch);
         }
 
@@ -375,7 +377,5 @@ public class Application
         }
 
         Console.WriteLine($"Executed {increments} times.");
-        
-
     }
 }
