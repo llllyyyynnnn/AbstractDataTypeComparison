@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
+using System.Timers;
 
 Application app = new Application();
 app.Execute();
@@ -25,7 +26,7 @@ public class CsvFile
     private int _templateCount;
 
 
-    public void Initialize(bool defineTemplate = true)
+    public void Initialize(string predefinedTemplate = "")
     {
         if (!File.Exists(Path))
             try
@@ -37,7 +38,8 @@ public class CsvFile
                 DebugFunctions.Log($"Could not write to {Path}. ({ex.Message})", DebugFunctions.EDebugType.Error);
             }
 
-        if (defineTemplate)
+        string templateContent = string.Empty;
+        if (predefinedTemplate == "")
         {
             bool inputCancelled = false;
             List<string> csvTemplate = new List<string>();
@@ -57,7 +59,6 @@ public class CsvFile
                 inputCancelled = Console.ReadLine()[0] == 'n';
             }
 
-            string templateContent = string.Empty;
             for (int i = 0; i < csvTemplate.Count; i++)
             {
                 string fieldName = csvTemplate[i];
@@ -66,9 +67,20 @@ public class CsvFile
                 if (i < csvTemplate.Count - 1)
                     templateContent += ";";
             }
+        }
+        else
+        {
+            templateContent = predefinedTemplate;
+        }
 
+        try
+        {
             File.WriteAllText(Path, templateContent);
             DebugFunctions.Log("Template has been created.", DebugFunctions.EDebugType.Success);
+        }
+        catch (Exception ex)
+        {
+            DebugFunctions.Log("Could not write to file.", DebugFunctions.EDebugType.Error);
         }
     }
 
@@ -114,11 +126,24 @@ public class CsvFile
             DebugFunctions.Log($"{Path} does not exist.", DebugFunctions.EDebugType.Error);
     }
 
-    public void Append(string content = "")
+    public void Append(string content)
     {
+        if (File.Exists(Path))
+        {
+            try
+            {
+                File.AppendAllText(Path, $"{Environment.NewLine}{content}");
+            }
+            catch (Exception ex)
+            {
+                DebugFunctions.Log($"Could not write to file.", DebugFunctions.EDebugType.Error);
+            }
+        }
+        else
+            DebugFunctions.Log($"{Path} does not exist.", DebugFunctions.EDebugType.Error);
     }
 
-    public void OutputContents(bool clear = false)
+    public void OutputContentsToTerminal(bool clear = false)
     {
         if (clear)
             Console.Clear();
@@ -236,20 +261,15 @@ public class Timers
     {
         private System.Diagnostics.Stopwatch _stopwatch = new System.Diagnostics.Stopwatch();
 
-        public void Start(bool resetStopwatch = true)
+        public void Start()
         {
             if (_stopwatch.IsRunning)
             {
                 _stopwatch.Stop();
-                _stopwatch.Reset();
-                DebugFunctions.Log(
-                    "Already running and got reset, this could be the result of an interrupted function.",
-                    DebugFunctions.EDebugType.Stopwatch);
+                DebugFunctions.Log("Already running and got reset, this could be the result of an interrupted function.", DebugFunctions.EDebugType.Stopwatch);
             }
 
-            if (resetStopwatch)
-                _stopwatch.Reset();
-
+            _stopwatch.Reset();
             _stopwatch.Start();
         }
 
@@ -263,24 +283,50 @@ public class Timers
                     DebugFunctions.EDebugType.Stopwatch);
         }
 
-        public long GetElapsedMilliseconds() => _stopwatch.ElapsedMilliseconds;
-        public TimeSpan GetElapsed() => _stopwatch.Elapsed;
+        public double GetElapsedMilliseconds() => _stopwatch.ElapsedMilliseconds;
     }
 
     public class CPU
     {
+        private double storedTime;
+        private double timeElapsedMilliseconds;
+
+        public void Start()
+        {
+            storedTime = Process.GetCurrentProcess().UserProcessorTime.TotalMilliseconds;
+        }
+
+        public void Stop()
+        {
+            timeElapsedMilliseconds = Process.GetCurrentProcess().UserProcessorTime.TotalMilliseconds - storedTime;   
+        }
+        
+        public double GetElapsedMilliseconds() => timeElapsedMilliseconds;
     }
 }
 
 public class Application
 {
-    private string SampleText = string.Empty;
-    private string[] SampleTextWords;
-    private int SampleTextWordCount = 0;
-    private int wordIncrement = 10000;
+    private string _sampleText = string.Empty;
+    private string[] _sampleTextWords;
+    private int _sampleTextWordCount = 0;
+    private int _wordIncrement = 10000;
     Timers.Stopwatch _stopwatch = new Timers.Stopwatch();
+    Timers.CPU _cpuTime = new Timers.CPU();
     string[] GetWords(string text) => text.Split(' ');
 
+    public class TestResults
+    {
+        public string DataType;
+        public KeyValuePair<string, int> MostFrequent;
+        public int UniqueWords;
+        public int WordLimit;
+        public int WordCount;
+
+        public double StopwatchElapsedMilliseconds;
+        public double CpuElapsedMilliseconds;
+    }
+    
     private void AssignFileContentsToString(ref string str)
     {
         Console.WriteLine("Please enter the path to the file you want to read from.");
@@ -313,69 +359,103 @@ public class Application
             AssignFileContentsToString(ref str);
     }
 
-    IEnumerable<KeyValuePair<string, int>> ListCounter(string[] words, int wordLimit = 0)
+    TestResults ListCounter(string[] words, int wordLimit = 0)
     {
         _stopwatch.Start();
+        _cpuTime.Start();
+        
         List<KeyValuePair<string, int>> kvPairs = new List<KeyValuePair<string, int>>();
 
         if (wordLimit == 0)
             wordLimit = words.Length;
 
+        int uniqueWords = 0;
+        
         for (int i = 0; i < wordLimit; i++)
         {
             string word = words[i];
-            int index = kvPairs.FindIndex(kv =>
-                kv.Key == word); // will result -1 if the word does not exist, in that case we just add it as kvp(word, 1)
 
-            if (index != -1)
+            int index = kvPairs.FindIndex(kv => kv.Key == word); // -1 if word wasn't stored
+            if (index != -1) // word was found
             {
-                kvPairs[index] =
-                    new KeyValuePair<string, int>(word,
-                        kvPairs[index].Value +
-                        1); // already exists, so we update it by getting the last int value and going +1
+                kvPairs[index] =  new KeyValuePair<string, int>(word,  kvPairs[index].Value + 1); // already exists, so we update it by getting the last int value and going +1
             }
-            else
+            else // not found
             {
                 kvPairs.Add(new KeyValuePair<string, int>(word, 1));
+                uniqueWords++;
             }
         }
 
         var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).FirstOrDefault();
         DebugFunctions.Log($"Most frequent word: {mostFrequent}");
         _stopwatch.Stop(true);
-        return kvPairs;
+        _cpuTime.Stop();
+
+        TestResults results = new TestResults();
+        results.DataType = "List";
+        results.MostFrequent = mostFrequent;
+        results.UniqueWords = uniqueWords;
+        results.WordLimit = wordLimit;
+        results.StopwatchElapsedMilliseconds = _stopwatch.GetElapsedMilliseconds();
+        results.CpuElapsedMilliseconds = _cpuTime.GetElapsedMilliseconds();
+
+        return results;
     }
 
     public void Execute()
     {
-        CsvFile file = new CsvFile();
-        file.Path = "C:\\Users\\e\\Downloads\\labb1\\Texts\\CSVFile.csv";
-        //file.Initialize();
+        AssignFileContentsToString(ref _sampleText);
+        _sampleTextWords = GetWords(_sampleText);
+        _sampleTextWordCount = _sampleTextWords.Length;
+        DebugFunctions.Log($"The word count of the provided sample is {_sampleTextWordCount}.");
+
+        List<TestResults> results = CheckWords();
+        string executionPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        string executionDirectory = Path.GetDirectoryName(executionPath); //  $"{executionDirectory}\\AbstractDatatypeComparison.csv";
+        string fullPath = $"{executionDirectory}\\AbstractDatatypeComparison.csv";
+        
+        CsvFile file = WriteResultsToCsv(fullPath, results);
         file.Read();
-        file.OutputContents();
+        file.OutputContentsToTerminal();
     }
 
-    public void Execute2()
+    public CsvFile WriteResultsToCsv(string path, List<TestResults> results)
     {
-        AssignFileContentsToString(ref SampleText);
-        SampleTextWords = GetWords(SampleText);
-        SampleTextWordCount = SampleTextWords.Length;
-        DebugFunctions.Log($"The word count of the provided sample is {SampleTextWordCount}.");
+        CsvFile file = new CsvFile();
+        file.Path = path;
+        file.Initialize("Datatype;Words tested;Time (stopwatch);Time (cpu);Unique words;Most frequent");
+
+        foreach (TestResults res in results)
+        {
+            file.Append($"{res.DataType};{res.WordLimit}/{res.WordCount};{res.StopwatchElapsedMilliseconds} ms;{res.CpuElapsedMilliseconds} ms;{res.UniqueWords};{res.MostFrequent}");
+        }
+
+        return file;
+    }
+    
+    public List<TestResults> CheckWords()
+    {
+        List<TestResults> resultsSaved = new List<TestResults>();
 
         int wordsToCheck = 0;
         int increments = 0;
-        while (SampleTextWordCount > wordsToCheck)
+        while (_sampleTextWordCount > wordsToCheck)
         {
             increments++;
-            wordsToCheck += wordIncrement;
+            wordsToCheck += _wordIncrement;
 
-            if (wordsToCheck > SampleTextWordCount)
-                wordsToCheck = SampleTextWordCount;
+            if (wordsToCheck > _sampleTextWordCount)
+                wordsToCheck = _sampleTextWordCount;
 
-            DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{SampleTextWordCount} words --");
-            ListCounter(SampleTextWords, wordsToCheck);
+            DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{_sampleTextWordCount} words --");
+            TestResults res = ListCounter(_sampleTextWords, wordsToCheck);
+            res.WordCount = _sampleTextWordCount;
+            resultsSaved.Add(res);
         }
 
-        Console.WriteLine($"Executed {increments} times.");
+        Console.WriteLine($"Executed a total of {increments} times.");
+
+        return resultsSaved;
     }
 }
