@@ -11,7 +11,8 @@ using AbstractDataTypeComparison.Utilities;
 Application app = new Application();
 app.Execute();
 
-public class CsvFile
+public class CsvFile // todo: move to own repo and link here
+    // todo: EditContent(field, value)
 {
     private struct ContentEntry
     {
@@ -511,7 +512,8 @@ public class Application
     {
         _stopwatch.Start();
         _cpuTime.Start();
-        AbstractDataTypeComparison.Utilities.BinarySearchTree<string, int> kvPairs = new AbstractDataTypeComparison.Utilities.BinarySearchTree<string, int>();
+        AbstractDataTypeComparison.Utilities.BinarySearchTree<string, int> kvPairs =
+            new AbstractDataTypeComparison.Utilities.BinarySearchTree<string, int>();
 
         if (wordLimit == 0)
             wordLimit = words.Length;
