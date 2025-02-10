@@ -397,6 +397,41 @@ public class Application
 
         return CreateTestResults("List", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());;
     }
+    
+    TestResults SortedListCounter(string[] words, int wordLimit = 0)
+    {
+        _stopwatch.Start();
+        _cpuTime.Start();
+        
+        SortedList<string, int> kvPairs = new SortedList<string, int>();
+
+        if (wordLimit == 0)
+            wordLimit = words.Length;
+
+        int uniqueWords = 0;
+        
+        for (int i = 0; i < wordLimit; i++)
+        {
+            string word = words[i];
+            
+            if (kvPairs.ContainsKey(word)) // word was found
+            {
+                kvPairs[word]++; // already exists, so we update it by getting the last int value and going +1
+            }
+            else // not found
+            {
+                kvPairs[word] = 1;
+                uniqueWords++;
+            }
+        }
+
+        var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).First();
+        _stopwatch.Stop(false);
+        _cpuTime.Stop();
+
+        return CreateTestResults("SortedList", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());;
+    }
+    
 
     public TestResults CreateTestResults(string dataType, KeyValuePair<string, int> mostFrequent, int uniqueWords, int wordLimit, double stopwatchElapsedMilliseconds, double cpuElapsedMilliseconds)
     {
@@ -458,12 +493,11 @@ public class Application
                 wordsToCheck = _sampleTextWordCount;
 
             DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{_sampleTextWordCount} words using List --");
-            TestResults res = ListCounter(_sampleTextWords, wordsToCheck);
-            res.WordCount = _sampleTextWordCount;
-            res.SampleName = _sampleTextName;
-            resultsSaved.Add(res);
+            TestResults listRes = ListCounter(_sampleTextWords, wordsToCheck);
+            listRes.WordCount = _sampleTextWordCount;
+            listRes.SampleName = _sampleTextName;
+            resultsSaved.Add(listRes);
         }
-
         Console.WriteLine($"Executed a total of {increments} times.");
 
         return resultsSaved;
