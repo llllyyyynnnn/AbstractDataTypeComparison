@@ -422,13 +422,13 @@ public class Application
         {
             string word = words[i];
 
-            if (kvPairs.ContainsKey(word)) // word was found
+            if (!kvPairs.TryAdd(word, 1)) // word was found
             {
                 kvPairs[word]++; // already exists, so we update it by getting the last int value and going +1
             }
             else // not found
             {
-                kvPairs[word] = 1;
+                //kvPairs[word] = 1; // not adding here because the if function already does if it doesn't exist, add it to unique word list
                 uniqueWords++;
             }
         }
