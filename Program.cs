@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Net.NetworkInformation;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
 using System.Timers;
@@ -307,6 +308,7 @@ public class Timers
 
 public class Application
 {
+    private string _sampleTextName = string.Empty;
     private string _sampleText = string.Empty;
     private string[] _sampleTextWords;
     private int _sampleTextWordCount = 0;
@@ -318,6 +320,7 @@ public class Application
     public class TestResults
     {
         public string DataType;
+        public string SampleName;
         public KeyValuePair<string, int> MostFrequent;
         public int UniqueWords;
         public int WordLimit;
@@ -342,6 +345,7 @@ public class Application
                 _stopwatch.Start();
                 str = File.ReadAllText(path);
                 DebugFunctions.Log("Assigned text!", DebugFunctions.EDebugType.Success);
+                _sampleTextName = Path.GetFileName(path);
                 _stopwatch.Stop();
                 completed = true;
             }
@@ -388,13 +392,13 @@ public class Application
         }
 
         var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).First();
-        _stopwatch.Stop(true);
+        _stopwatch.Stop(false);
         _cpuTime.Stop();
 
-        return CreateAndAssignTestResults("List", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());;
+        return CreateTestResults("List", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());;
     }
 
-    public TestResults CreateAndAssignTestResults(string dataType, KeyValuePair<string, int> mostFrequent, int uniqueWords, int wordLimit, double stopwatchElapsedMilliseconds, double cpuElapsedMilliseconds)
+    public TestResults CreateTestResults(string dataType, KeyValuePair<string, int> mostFrequent, int uniqueWords, int wordLimit, double stopwatchElapsedMilliseconds, double cpuElapsedMilliseconds)
     {
         TestResults results = new TestResults();
         results.DataType = "List";
@@ -428,11 +432,12 @@ public class Application
     {
         CsvFile file = new CsvFile();
         file.Path = path;
-        file.Initialize("Datatype;Words tested;Time (stopwatch);Time (cpu);Unique words;Most frequent");
+        if(!File.Exists(path))
+        file.Initialize("Datatype;Sample filename;Words tested;Time (stopwatch);Time (cpu);Unique words;Most frequent");
 
         foreach (TestResults res in results)
         {
-            file.Append($"{res.DataType};{res.WordLimit}/{res.WordCount};{res.StopwatchElapsedMilliseconds} ms;{res.CpuElapsedMilliseconds} ms;{res.UniqueWords};{res.MostFrequent}");
+            file.Append($"{res.DataType};{res.SampleName};{res.WordLimit}/{res.WordCount};{res.StopwatchElapsedMilliseconds} ms;{res.CpuElapsedMilliseconds} ms;{res.UniqueWords};{res.MostFrequent}");
         }
 
         return file;
@@ -452,9 +457,10 @@ public class Application
             if (wordsToCheck > _sampleTextWordCount)
                 wordsToCheck = _sampleTextWordCount;
 
-            DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{_sampleTextWordCount} words --");
+            DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{_sampleTextWordCount} words using List --");
             TestResults res = ListCounter(_sampleTextWords, wordsToCheck);
             res.WordCount = _sampleTextWordCount;
+            res.SampleName = _sampleTextName;
             resultsSaved.Add(res);
         }
 
