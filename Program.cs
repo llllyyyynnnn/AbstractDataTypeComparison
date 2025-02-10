@@ -528,7 +528,7 @@ public class Application
             }
             else // not found
             {
-                kvPairs[word] = 1;
+                kvPairs.Add(word, 1);
                 uniqueWords++;
             }
         }
@@ -625,7 +625,7 @@ public class Application
                         res = SortedDictionaryCounter(_sampleTextWords, wordsToCheck);
                         break;
                     case 4:
-                        //res = BinarySearchTreeCounter(_sampleTextWords, wordsToCheck);
+                        res = BinarySearchTreeCounter(_sampleTextWords, wordsToCheck);
                         break;
                 }
 
