@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
 using System.Timers;
+using AbstractDataTypeComparison.Utilities;
 
 Application app = new Application();
 app.Execute();
@@ -436,15 +437,15 @@ public class Application
         _stopwatch.Stop(false);
         _cpuTime.Stop();
 
-        return CreateTestResults("SortedList", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
+        return CreateTestResults("SortedList", mostFrequent, uniqueWords, wordLimit,
+            _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
     }
 
     TestResults DictionaryCounter(string[] words, int wordLimit = 0)
     {
         _stopwatch.Start();
         _cpuTime.Start();
-
-        SortedList<string, int> kvPairs = new SortedList<string, int>();
+        Dictionary<string, int> kvPairs = new Dictionary<string, int>();
 
         if (wordLimit == 0)
             wordLimit = words.Length;
@@ -455,7 +456,73 @@ public class Application
         {
             string word = words[i];
 
-            if (kvPairs.ContainsKey(word)) // word was found
+            if (!kvPairs.TryAdd(word, 1)) // if word already exists it returns false and we move on to updating count
+            {
+                kvPairs[word]++;
+            }
+            else
+            {
+                uniqueWords++; // new word found, and it was already added because thats how the function works
+            }
+        }
+
+        var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).First();
+        _stopwatch.Stop(false);
+        _cpuTime.Stop();
+
+        return CreateTestResults("Dictionary", mostFrequent, uniqueWords, wordLimit,
+            _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
+    }
+
+    TestResults SortedDictionaryCounter(string[] words, int wordLimit = 0)
+    {
+        _stopwatch.Start();
+        _cpuTime.Start();
+        SortedDictionary<string, int> kvPairs = new SortedDictionary<string, int>();
+
+        if (wordLimit == 0)
+            wordLimit = words.Length;
+
+        int uniqueWords = 0;
+
+        for (int i = 0; i < wordLimit; i++)
+        {
+            string word = words[i];
+
+            if (!kvPairs.TryAdd(word, 1)) // if word already exists it returns false and we move on to updating count
+            {
+                kvPairs[word]++;
+            }
+            else
+            {
+                uniqueWords++; // new word found, and it was already added because thats how the function works
+            }
+        }
+
+        var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).First();
+        _stopwatch.Stop(false);
+        _cpuTime.Stop();
+
+        return CreateTestResults("SortedDictionary", mostFrequent, uniqueWords, wordLimit,
+            _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
+    }
+
+    TestResults BinarySearchTreeCounter(string[] words, int wordLimit = 0)
+    {
+        _stopwatch.Start();
+        _cpuTime.Start();
+        AbstractDataTypeComparison.Utilities.BinarySearchTree<string, int> kvPairs = new AbstractDataTypeComparison.Utilities.BinarySearchTree<string, int>();
+
+        if (wordLimit == 0)
+            wordLimit = words.Length;
+
+        int uniqueWords = 0;
+
+        for (int i = 0; i < wordLimit; i++)
+        {
+            string word = words[i];
+
+            if (kvPairs.Contains(word)) // word was found
             {
                 kvPairs[word]++; // already exists, so we update it by getting the last int value and going +1
             }
@@ -470,7 +537,8 @@ public class Application
         _stopwatch.Stop(false);
         _cpuTime.Stop();
 
-        return CreateTestResults("SortedList", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
+        return CreateTestResults("BinarySearchTree", mostFrequent, uniqueWords, wordLimit,
+            _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
     }
 
 
@@ -527,24 +595,47 @@ public class Application
     {
         List<TestResults> resultsSaved = new List<TestResults>();
 
-        int wordsToCheck = 0;
-        int increments = 0;
-        while (_sampleTextWordCount > wordsToCheck)
+        for (int i = 0; i < 5; i++)
         {
-            increments++;
-            wordsToCheck += _wordIncrement;
+            int wordsToCheck = 0;
+            int increments = 0;
+            while (_sampleTextWordCount > wordsToCheck)
+            {
+                increments++;
+                wordsToCheck += _wordIncrement;
 
-            if (wordsToCheck > _sampleTextWordCount)
-                wordsToCheck = _sampleTextWordCount;
+                if (wordsToCheck > _sampleTextWordCount)
+                    wordsToCheck = _sampleTextWordCount;
 
-            DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{_sampleTextWordCount} words using List --");
-            TestResults listRes = ListCounter(_sampleTextWords, wordsToCheck);
-            listRes.WordCount = _sampleTextWordCount;
-            listRes.SampleName = _sampleTextName;
-            resultsSaved.Add(listRes);
+                DebugFunctions.Log($"-- ({increments}) Reading {wordsToCheck}/{_sampleTextWordCount} words  ({i}) --");
+                TestResults res = new TestResults();
+
+                switch (i)
+                {
+                    case 0:
+                        res = ListCounter(_sampleTextWords, wordsToCheck);
+                        break;
+                    case 1:
+                        res = SortedListCounter(_sampleTextWords, wordsToCheck);
+                        break;
+                    case 2:
+                        res = DictionaryCounter(_sampleTextWords, wordsToCheck);
+                        break;
+                    case 3:
+                        res = SortedDictionaryCounter(_sampleTextWords, wordsToCheck);
+                        break;
+                    case 4:
+                        //res = BinarySearchTreeCounter(_sampleTextWords, wordsToCheck);
+                        break;
+                }
+
+                res.WordCount = _sampleTextWordCount;
+                res.SampleName = _sampleTextName;
+                resultsSaved.Add(res);
+            }
+
+            Console.WriteLine($"** Executed a total of {increments} times. **");
         }
-
-        Console.WriteLine($"Executed a total of {increments} times.");
 
         return resultsSaved;
     }
