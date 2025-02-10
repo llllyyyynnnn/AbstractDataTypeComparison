@@ -267,7 +267,9 @@ public class Timers
             if (_stopwatch.IsRunning)
             {
                 _stopwatch.Stop();
-                DebugFunctions.Log("Already running and got reset, this could be the result of an interrupted function.", DebugFunctions.EDebugType.Stopwatch);
+                DebugFunctions.Log(
+                    "Already running and got reset, this could be the result of an interrupted function.",
+                    DebugFunctions.EDebugType.Stopwatch);
             }
 
             _stopwatch.Reset();
@@ -299,9 +301,9 @@ public class Timers
 
         public void Stop()
         {
-            timeElapsedMilliseconds = Process.GetCurrentProcess().UserProcessorTime.TotalMilliseconds - storedTime;   
+            timeElapsedMilliseconds = Process.GetCurrentProcess().UserProcessorTime.TotalMilliseconds - storedTime;
         }
-        
+
         public double GetElapsedMilliseconds() => timeElapsedMilliseconds;
     }
 }
@@ -329,7 +331,7 @@ public class Application
         public double StopwatchElapsedMilliseconds;
         public double CpuElapsedMilliseconds;
     }
-    
+
     private void AssignFileContentsToString(ref string str)
     {
         Console.WriteLine("Please enter the path to the file you want to read from.");
@@ -367,14 +369,14 @@ public class Application
     {
         _stopwatch.Start();
         _cpuTime.Start();
-        
+
         List<KeyValuePair<string, int>> kvPairs = new List<KeyValuePair<string, int>>();
 
         if (wordLimit == 0)
             wordLimit = words.Length;
 
         int uniqueWords = 0;
-        
+
         for (int i = 0; i < wordLimit; i++)
         {
             string word = words[i];
@@ -382,7 +384,10 @@ public class Application
             int index = kvPairs.FindIndex(kv => kv.Key == word); // -1 if word wasn't stored
             if (index != -1) // word was found
             {
-                kvPairs[index] =  new KeyValuePair<string, int>(word,  kvPairs[index].Value + 1); // already exists, so we update it by getting the last int value and going +1
+                kvPairs[index] =
+                    new KeyValuePair<string, int>(word,
+                        kvPairs[index].Value +
+                        1); // already exists, so we update it by getting the last int value and going +1
             }
             else // not found
             {
@@ -395,25 +400,27 @@ public class Application
         _stopwatch.Stop(false);
         _cpuTime.Stop();
 
-        return CreateTestResults("List", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());;
+        return CreateTestResults("List", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(),
+            _cpuTime.GetElapsedMilliseconds());
+        ;
     }
-    
+
     TestResults SortedListCounter(string[] words, int wordLimit = 0)
     {
         _stopwatch.Start();
         _cpuTime.Start();
-        
+
         SortedList<string, int> kvPairs = new SortedList<string, int>();
 
         if (wordLimit == 0)
             wordLimit = words.Length;
 
         int uniqueWords = 0;
-        
+
         for (int i = 0; i < wordLimit; i++)
         {
             string word = words[i];
-            
+
             if (kvPairs.ContainsKey(word)) // word was found
             {
                 kvPairs[word]++; // already exists, so we update it by getting the last int value and going +1
@@ -429,20 +436,55 @@ public class Application
         _stopwatch.Stop(false);
         _cpuTime.Stop();
 
-        return CreateTestResults("SortedList", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());;
+        return CreateTestResults("SortedList", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
     }
-    
 
-    public TestResults CreateTestResults(string dataType, KeyValuePair<string, int> mostFrequent, int uniqueWords, int wordLimit, double stopwatchElapsedMilliseconds, double cpuElapsedMilliseconds)
+    TestResults DictionaryCounter(string[] words, int wordLimit = 0)
+    {
+        _stopwatch.Start();
+        _cpuTime.Start();
+
+        SortedList<string, int> kvPairs = new SortedList<string, int>();
+
+        if (wordLimit == 0)
+            wordLimit = words.Length;
+
+        int uniqueWords = 0;
+
+        for (int i = 0; i < wordLimit; i++)
+        {
+            string word = words[i];
+
+            if (kvPairs.ContainsKey(word)) // word was found
+            {
+                kvPairs[word]++; // already exists, so we update it by getting the last int value and going +1
+            }
+            else // not found
+            {
+                kvPairs[word] = 1;
+                uniqueWords++;
+            }
+        }
+
+        var mostFrequent = kvPairs.OrderByDescending(kv => kv.Value).First();
+        _stopwatch.Stop(false);
+        _cpuTime.Stop();
+
+        return CreateTestResults("SortedList", mostFrequent, uniqueWords, wordLimit, _stopwatch.GetElapsedMilliseconds(), _cpuTime.GetElapsedMilliseconds());
+    }
+
+
+    public TestResults CreateTestResults(string dataType, KeyValuePair<string, int> mostFrequent, int uniqueWords,
+        int wordLimit, double stopwatchElapsedMilliseconds, double cpuElapsedMilliseconds)
     {
         TestResults results = new TestResults();
-        results.DataType = "List";
+        results.DataType = dataType;
         results.MostFrequent = mostFrequent;
         results.UniqueWords = uniqueWords;
         results.WordLimit = wordLimit;
         results.StopwatchElapsedMilliseconds = _stopwatch.GetElapsedMilliseconds();
         results.CpuElapsedMilliseconds = _cpuTime.GetElapsedMilliseconds();
-        
+
         return results;
     }
 
@@ -455,9 +497,10 @@ public class Application
 
         List<TestResults> results = CheckWords();
         string executionPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-        string executionDirectory = Path.GetDirectoryName(executionPath); //  $"{executionDirectory}\\AbstractDatatypeComparison.csv";
+        string executionDirectory =
+            Path.GetDirectoryName(executionPath); //  $"{executionDirectory}\\AbstractDatatypeComparison.csv";
         string fullPath = $"{executionDirectory}\\AbstractDatatypeComparison.csv";
-        
+
         CsvFile file = WriteResultsToCsv(fullPath, results);
         file.Read();
         file.OutputContentsToTerminal();
@@ -467,17 +510,19 @@ public class Application
     {
         CsvFile file = new CsvFile();
         file.Path = path;
-        if(!File.Exists(path))
-        file.Initialize("Datatype;Sample filename;Words tested;Time (stopwatch);Time (cpu);Unique words;Most frequent");
+        if (!File.Exists(path))
+            file.Initialize(
+                "Datatype;Sample filename;Words tested;Time (stopwatch);Time (cpu);Unique words;Most frequent");
 
         foreach (TestResults res in results)
         {
-            file.Append($"{res.DataType};{res.SampleName};{res.WordLimit}/{res.WordCount};{res.StopwatchElapsedMilliseconds} ms;{res.CpuElapsedMilliseconds} ms;{res.UniqueWords};{res.MostFrequent}");
+            file.Append(
+                $"{res.DataType};{res.SampleName};{res.WordLimit}/{res.WordCount};{res.StopwatchElapsedMilliseconds} ms;{res.CpuElapsedMilliseconds} ms;{res.UniqueWords};{res.MostFrequent}");
         }
 
         return file;
     }
-    
+
     public List<TestResults> CheckWords()
     {
         List<TestResults> resultsSaved = new List<TestResults>();
@@ -498,6 +543,7 @@ public class Application
             listRes.SampleName = _sampleTextName;
             resultsSaved.Add(listRes);
         }
+
         Console.WriteLine($"Executed a total of {increments} times.");
 
         return resultsSaved;
