@@ -6,7 +6,6 @@ in the provided example as well as what word was the most re-occuring alongside 
 For the results to be accurate, the following was done.
 
 * The file is read and assigned to a string array at the start of execution.
-* The application waits a second between relevant operations to prevent any previous functions from affecting the other.
 * The variables are defined within the functions themselves and are not passed on. 
 * Stopwatch and CPU time are both being taken during the functions execution.
 * Words checked increase by 10,000 at a time in order to also document how different word counts affect the effectivity of a certain structure.
